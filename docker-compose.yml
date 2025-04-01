@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector extension for vector storage
+  db:
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: ack_agent
+      POSTGRES_PASSWORD: ack_agent_password
+      POSTGRES_DB: ack_agent_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ack_agent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  # Ack Agent service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://ack_agent:ack_agent_password@db:5432/ack_agent_db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PAGERDUTY_API_KEY=${PAGERDUTY_API_KEY}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - KUBERNETES_CONFIG=${KUBERNETES_CONFIG}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn ack_agent.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:
