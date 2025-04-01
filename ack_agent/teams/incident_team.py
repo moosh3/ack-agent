@@ -3,7 +3,7 @@ from agno.models.openai import OpenAIChat
 
 # Import individual agents
 from ack_agent.agents.responder.agent import create_responder_agent
-from ack_agent.agents.investigator.agent import create_investigator_agent
+from ack_agent.agents.investigators.coordinator import create_investigation_coordinator
 from ack_agent.agents.analyst.agent import create_analyst_agent
 from ack_agent.agents.manager.agent import create_manager_agent
 
@@ -22,16 +22,22 @@ def create_incident_team():
     """
     # Create individual agents
     responder = create_responder_agent()
-    investigator = create_investigator_agent()
+    investigation_coordinator = create_investigation_coordinator()
     analyst = create_analyst_agent()
     manager = create_manager_agent()
     
     # Create and configure the team
     incident_team = Team(
         mode="coordinate",  # Use coordinate mode to organize the team workflow
+        enable_agentic_context=True,  # Enable Team Leader to maintain Agentic Context
+        share_member_interactions=True,  # Share interactions
+        show_tool_calls=True,
+        markdown=True,
+        debug_mode=True,
+        show_members_responses=True,
         members=[
             responder,
-            investigator,
+            investigation_coordinator,
             analyst,
             manager
         ],
